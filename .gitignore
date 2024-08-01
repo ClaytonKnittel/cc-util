@@ -1,0 +1,5 @@
+*.swp
+/bazel-*
+/.cache
+/external
+/compile_commands.json
