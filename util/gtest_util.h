@@ -25,9 +25,9 @@ absl::Status DoAssignOrReturn(T &lhs, absl::StatusOr<T> result) {
   return result.status();
 }
 
-#define ASSIGN_OR_RETURN_IMPL(status, lhs, rexpr)       \
-  absl::Status status = DoAssignOrReturn(lhs, (rexpr)); \
-  if (!(status).ok())                                   \
+#define ASSIGN_OR_RETURN_IMPL(status, lhs, ...)               \
+  absl::Status status = DoAssignOrReturn(lhs, (__VA_ARGS__)); \
+  if (!(status).ok())                                         \
     return status;
 
 // Executes an expression that returns a util::StatusOr, extracting its value
@@ -39,23 +39,24 @@ absl::Status DoAssignOrReturn(T &lhs, absl::StatusOr<T> result) {
 //
 // WARNING: ASSIGN_OR_RETURN expands into multiple statements; it cannot be used
 //  in a single statement (e.g. as the body of an if statement without {})!
-#define ASSIGN_OR_RETURN(lhs, rexpr)                                           \
+#define ASSIGN_OR_RETURN(lhs, ...)                                             \
   ASSIGN_OR_RETURN_IMPL(UTILS_CONCAT_NAME(_status_or_value, __COUNTER__), lhs, \
-                        rexpr);
+                        __VA_ARGS__);
 
-#define DEFINE_OR_RETURN_IMPL(type, lhs, tmp, rexpr) \
-  absl::StatusOr<type> tmp = (rexpr);                \
-  if (!(tmp).ok()) {                                 \
-    return (tmp).status();                           \
-  }                                                  \
+#define DEFINE_OR_RETURN_IMPL(type, lhs, tmp, ...) \
+  absl::StatusOr<type> tmp = (__VA_ARGS__);        \
+  if (!(tmp).ok()) {                               \
+    return (tmp).status();                         \
+  }                                                \
   type &lhs = (tmp).value();  // NOLINT(bugprone-macro-parentheses)
 
 // Executes an expression that returns an absl::StatusOr<T>, and defines a new
 // variable with given type and name to the result if the error code is OK. If
 // the Status is non-OK, returns the error.
-#define DEFINE_OR_RETURN(type, lhs, rexpr) \
-  DEFINE_OR_RETURN_IMPL(                   \
-      type, lhs, UTILS_CONCAT_NAME(__define_or_return_, __COUNTER__), rexpr)
+#define DEFINE_OR_RETURN(type, lhs, ...)                                     \
+  DEFINE_OR_RETURN_IMPL(type, lhs,                                           \
+                        UTILS_CONCAT_NAME(__define_or_return_, __COUNTER__), \
+                        __VA_ARGS__)
 
 // Executes an expression that returns an absl::StatusOr<T>, and assigns the
 // contained variable to lhs if the error code is OK. If the Status is non-OK,
@@ -70,30 +71,31 @@ absl::Status DoAssignOrReturn(T &lhs, absl::StatusOr<T> result) {
 //   StatusOr<ValueType> status_or_value = MaybeGetValue(arg);
 //   ASSERT_OK(status_or_value.status());
 //   value = *status_or_value;
-#define ASSERT_OK_AND_ASSIGN(lhs, rexpr)                                       \
-  do {                                                                         \
-    auto _statusor_to_verify = rexpr;                                          \
-    if (!_statusor_to_verify.ok()) {                                           \
-      FAIL() << #rexpr << " returned error: " << _statusor_to_verify.status(); \
-    }                                                                          \
-    (lhs) = *std::move(_statusor_to_verify);                                   \
+#define ASSERT_OK_AND_ASSIGN(lhs, ...)                               \
+  do {                                                               \
+    auto _statusor_to_verify = (__VA_ARGS__);                        \
+    if (!_statusor_to_verify.ok()) {                                 \
+      FAIL() << #__VA_ARGS__                                         \
+             << " returned error: " << _statusor_to_verify.status(); \
+    }                                                                \
+    (lhs) = *std::move(_statusor_to_verify);                         \
   } while (false)
 
-#define ASSERT_OK_AND_DEFINE_IMPL(type, lhs, tmp, rexpr)       \
-  absl::StatusOr<type> tmp = (rexpr);                          \
-  if (!(tmp).ok()) {                                           \
-    FAIL() << #rexpr << " returned error: " << (tmp).status(); \
-  }                                                            \
+#define ASSERT_OK_AND_DEFINE_IMPL(type, lhs, tmp, ...)               \
+  absl::StatusOr<type> tmp = (__VA_ARGS__);                          \
+  if (!(tmp).ok()) {                                                 \
+    FAIL() << #__VA_ARGS__ << " returned error: " << (tmp).status(); \
+  }                                                                  \
   type &lhs = (tmp).value()  // NOLINT(bugprone-macro-parentheses)
 
 // Executes an expression that returns an absl::StatusOr<T>, and defines a new
 // variable with given type and name to the result if the error code is OK. If
 // the Status is non-OK, generates a test failure and returns from the current
 // function, which must have a void return type.
-#define ASSERT_OK_AND_DEFINE(type, lhs, rexpr)                            \
+#define ASSERT_OK_AND_DEFINE(type, lhs, ...)                              \
   ASSERT_OK_AND_DEFINE_IMPL(                                              \
       type, lhs, UTILS_CONCAT_NAME(__assert_ok_and_define_, __COUNTER__), \
-      rexpr)
+      __VA_ARGS__)
 
 namespace util {
 
@@ -167,7 +169,8 @@ class IsOkAndHoldsGenerator {
       : value_matcher_(std::move(value_matcher)) {}
 
   template <typename T>
-  explicit operator ::testing::Matcher<const absl::StatusOr<T> &>() const {
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  operator ::testing::Matcher<const absl::StatusOr<T> &>() const {
     return ::testing::MakeMatcher(
         new IsOkAndHoldsMatcher<absl::StatusOr<T>>(value_matcher_));
   }
