@@ -5,6 +5,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include "util/absl_util.h"
+
 namespace util {
 
 using ::testing::Not;
