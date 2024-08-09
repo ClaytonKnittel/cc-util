@@ -4,6 +4,14 @@
 
 #include "util/macro_util.h"
 
+#define RETURN_IF_NULL(expr) \
+  do {                       \
+    auto _opt = (expr);      \
+    if (!_opt.has_value()) { \
+      return std::nullopt;   \
+    }                        \
+  } while (0)
+
 #define DEFINE_OR_RETURN_OPT_IMPL(type, lhs, tmp, ...) \
   std::optional<type> tmp = (__VA_ARGS__);             \
   if (!(tmp).has_value()) {                            \
