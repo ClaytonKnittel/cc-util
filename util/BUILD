@@ -3,6 +3,7 @@ cc_library(
     hdrs = ["absl_util.h"],
     visibility = ["//visibility:public"],
     deps = [
+        ":macro_util",
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/status:statusor",
     ],
@@ -29,5 +30,20 @@ cc_test(
         "@abseil-cpp//absl/status:statusor",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "macro_util",
+    hdrs = ["macro_util.h"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "std_util",
+    hdrs = ["std_util.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":macro_util",
     ],
 )

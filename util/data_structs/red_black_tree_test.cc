@@ -8,6 +8,7 @@
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
 
+#include "util/absl_util.h"
 #include "util/gtest_util.h"
 
 namespace util {

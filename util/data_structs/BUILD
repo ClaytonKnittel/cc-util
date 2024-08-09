@@ -12,6 +12,7 @@ cc_test(
     srcs = ["red_black_tree_test.cc"],
     deps = [
         ":red_black_tree",
+        "//util:absl_util",
         "//util:gtest_util",
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/strings:str_format",

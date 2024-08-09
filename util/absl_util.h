@@ -3,16 +3,14 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
+#include "util/macro_util.h"
+
 #define RETURN_IF_ERROR(expr)      \
   do {                             \
     absl::Status _status = (expr); \
     if (!_status.ok())             \
       return _status;              \
   } while (0)
-
-// Internal helper for concatenating macro values.
-#define UTILS_CONCAT_NAME_INNER(x, y) x##y
-#define UTILS_CONCAT_NAME(x, y)       UTILS_CONCAT_NAME_INNER(x, y)
 
 template <typename T>
 absl::Status DoAssignOrReturn(T &lhs, absl::StatusOr<T> result) {
@@ -45,7 +43,7 @@ absl::Status DoAssignOrReturn(T &lhs, absl::StatusOr<T> result) {
   if (!(tmp).ok()) {                               \
     return (tmp).status();                         \
   }                                                \
-  type &lhs = (tmp).value();  // NOLINT(bugprone-macro-parentheses)
+  type &lhs = (tmp).value()  // NOLINT(bugprone-macro-parentheses)
 
 // Executes an expression that returns an absl::StatusOr<T>, and defines a new
 // variable with given type and name to the result if the error code is OK. If
