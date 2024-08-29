@@ -47,4 +47,4 @@
 
 // Switch to/from the main and alternate displays in xterm.
 #define CSI_ALTERNATE_DISPLAY "\e[?1049h"
-#define CSI_MAIN_DISPLAY      "\e[?1049h"
+#define CSI_MAIN_DISPLAY      "\e[?1049l"
