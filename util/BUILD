@@ -10,6 +10,12 @@ cc_library(
 )
 
 cc_library(
+    name = "csi",
+    hdrs = ["csi.h"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
     name = "gtest_util",
     hdrs = ["gtest_util.h"],
     visibility = ["//visibility:public"],
@@ -36,6 +42,12 @@ cc_test(
 cc_library(
     name = "macro_util",
     hdrs = ["macro_util.h"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "print_colors",
+    hdrs = ["print_colors.h"],
     visibility = ["//visibility:public"],
 )
 
