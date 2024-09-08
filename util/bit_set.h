@@ -64,13 +64,15 @@ class BitSet {
   // highest-position bit.
   constexpr size_t LeadingOnes() const;
 
-  // Counts the number of consecutive trailing zeros, starting from the
-  // lowest-position bit.
-  constexpr size_t TrailingZeros() const;
+  // Counts the number of consecutive trailing zeros, starting from `from` and
+  // checking consecutive higher-index bits. If the bit at `from` is set, `from
+  // is returned.
+  constexpr size_t TrailingZeros(size_t from = 0) const;
 
-  // Counts the number of consecutive trailing ones, starting from the
-  // lowest-position bit.
-  constexpr size_t TrailingOnes() const;
+  // Counts the number of consecutive trailing ones, starting from `from` and
+  // checking consecutive higher-index bits. If the bit at `from` is not set,
+  // `from` is returned.
+  constexpr size_t TrailingOnes(size_t from = 0) const;
 
  private:
   // Returns the index into data and the index into the number at that index of
@@ -179,8 +181,14 @@ constexpr size_t BitSet<N, I>::LeadingOnes() const {
 }
 
 template <size_t N, typename I>
-constexpr size_t BitSet<N, I>::TrailingZeros() const {
-  for (size_t idx = 0; idx < kArraySize; idx++) {
+constexpr size_t BitSet<N, I>::TrailingZeros(size_t from) const {
+  auto [idx, bidx] = Idx(from);
+  size_t trailing_zeros =
+      absl::countr_zero(data_[idx] & ~((I(0x1) << bidx) - 1));
+  if (trailing_zeros < kBitsPerEntry) {
+    return trailing_zeros + idx * kBitsPerEntry;
+  }
+  for (idx++; idx < kArraySize; idx++) {
     size_t trailing_zeros = absl::countr_zero(data_[idx]);
     if (trailing_zeros < kBitsPerEntry) {
       return trailing_zeros + idx * kBitsPerEntry;
@@ -190,8 +198,13 @@ constexpr size_t BitSet<N, I>::TrailingZeros() const {
 }
 
 template <size_t N, typename I>
-constexpr size_t BitSet<N, I>::TrailingOnes() const {
-  for (size_t idx = 0; idx < kArraySize; idx++) {
+constexpr size_t BitSet<N, I>::TrailingOnes(size_t from) const {
+  auto [idx, bidx] = Idx(from);
+  size_t trailing_ones = absl::countr_one(data_[idx] | ((I(0x1) << bidx) - 1));
+  if (trailing_ones < kBitsPerEntry) {
+    return trailing_ones + idx * kBitsPerEntry;
+  }
+  for (idx++; idx < kArraySize; idx++) {
     size_t trailing_ones = absl::countr_one(data_[idx]);
     if (trailing_ones < kBitsPerEntry) {
       return trailing_ones + idx * kBitsPerEntry;

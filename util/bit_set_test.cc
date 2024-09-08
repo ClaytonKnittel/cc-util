@@ -60,8 +60,11 @@ TEST(BitSetTest, TestSingleBit) {
     EXPECT_EQ(s.Popcount(), 1);
     EXPECT_EQ(s.LeadingZeros(), kSize - pos - 1);
     EXPECT_EQ(s.LeadingOnes(), pos == kSize - 1 ? 1 : 0);
-    EXPECT_EQ(s.TrailingZeros(), pos);
-    EXPECT_EQ(s.TrailingOnes(), pos == 0 ? 1 : 0);
+
+    for (size_t from = 0; from < kSize; from++) {
+      EXPECT_EQ(s.TrailingZeros(from), from <= pos ? pos : kSize);
+      EXPECT_EQ(s.TrailingOnes(from), from == pos ? pos + 1 : from);
+    }
   }
 }
 
