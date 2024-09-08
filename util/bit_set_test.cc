@@ -109,4 +109,30 @@ TEST(BitSetTest, TestIterateFrom) {
   EXPECT_THAT(els, testing::ElementsAreArray(b.begin(/*from=*/55), b.end()));
 }
 
+TEST(BitSetTest, TestClearIterator) {
+  static constexpr size_t kSize = 222;
+  BitSet<kSize> b;
+
+  b.Set(81);
+  b.Set(12);
+  b.Set(14);
+  b.Set(0);
+  b.Set(88);
+  b.Set(220);
+
+  auto it = b.begin();
+  it.ClearAt();
+  ++it;
+  ++it;
+  ++it;
+  it.ClearAt();
+  ++it;
+  ++it;
+  it.ClearAt();
+  ++it;
+
+  EXPECT_EQ(it, b.end());
+  EXPECT_THAT(b, testing::ElementsAre(12, 14, 88));
+}
+
 }  // namespace util

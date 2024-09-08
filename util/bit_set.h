@@ -22,7 +22,7 @@ struct BitSetRepr {
 template <size_t N, typename I>
 class BitSet;
 
-template <size_t N, typename I>
+template <size_t N, typename I, typename C>
 class BitSetIterator {
   friend BitSet<N, I>;
 
@@ -32,6 +32,9 @@ class BitSetIterator {
   using pointer = const size_t*;
   using difference_type = size_t;
   using iterator_category = std::forward_iterator_tag;
+
+  using BitSetT =
+      std::conditional_t<C::value, const BitSet<N, I>, BitSet<N, I>>;
 
   constexpr BitSetIterator(const BitSetIterator&) = default;
   constexpr BitSetIterator& operator=(const BitSetIterator&) = default;
@@ -45,15 +48,18 @@ class BitSetIterator {
   constexpr BitSetIterator& operator++();
   constexpr BitSetIterator operator++(int);
 
+  template <typename U = C>
+  constexpr typename std::enable_if_t<!U::value, void> ClearAt();
+
  private:
   // Constructs the end() iterator.
   BitSetIterator();
   // Constructs an iterator starting at the given position.
-  explicit BitSetIterator(const BitSet<N, I>& bit_set, size_t starting_pos = 0);
+  explicit BitSetIterator(BitSetT& bit_set, size_t starting_pos = 0);
 
   void FindNextBit();
 
-  const BitSet<N, I>* bit_set_;
+  BitSetT* bit_set_;
   size_t idx_;
   uint32_t bidx_;
   I cache_;
@@ -61,7 +67,8 @@ class BitSetIterator {
 
 template <size_t N, typename I = BitSetRepr<N>::value>
 class BitSet {
-  friend BitSetIterator<N, I>;
+  friend BitSetIterator<N, I, std::true_type>;
+  friend BitSetIterator<N, I, std::false_type>;
 
   static constexpr size_t kBitsPerEntry = std::numeric_limits<I>::digits;
   static constexpr size_t kArraySize = (N + kBitsPerEntry - 1) / kBitsPerEntry;
@@ -74,7 +81,8 @@ class BitSet {
   using value_type = size_t;
   using const_reference = const size_t&;
   using const_pointer = const size_t*;
-  using const_iterator = BitSetIterator<N, I>;
+  using iterator = BitSetIterator<N, I, std::false_type>;
+  using const_iterator = BitSetIterator<N, I, std::true_type>;
 
   constexpr BitSet() = default;
 
@@ -122,7 +130,9 @@ class BitSet {
   // `from` is returned.
   constexpr size_t TrailingOnes(size_t from = 0) const;
 
+  constexpr iterator begin(size_t from = 0);
   constexpr const_iterator begin(size_t from = 0) const;
+  constexpr iterator end();
   constexpr const_iterator end() const;
 
  private:
@@ -133,43 +143,49 @@ class BitSet {
   I data_[kArraySize] = {};
 };
 
-template <size_t N, typename I>
-constexpr size_t BitSetIterator<N, I>::operator*() const {
+template <size_t N, typename I, typename C>
+constexpr size_t BitSetIterator<N, I, C>::operator*() const {
   return idx_ * BitSet<N, I>::kBitsPerEntry + bidx_;
 }
 
-template <size_t N, typename I>
-constexpr bool BitSetIterator<N, I>::operator==(
+template <size_t N, typename I, typename C>
+constexpr bool BitSetIterator<N, I, C>::operator==(
     const BitSetIterator& it) const {
   return idx_ == it.idx_ && bidx_ == it.bidx_;
 }
 
-template <size_t N, typename I>
-constexpr bool BitSetIterator<N, I>::operator!=(
+template <size_t N, typename I, typename C>
+constexpr bool BitSetIterator<N, I, C>::operator!=(
     const BitSetIterator& it) const {
   return !(*this == it);
 }
 
-template <size_t N, typename I>
-constexpr BitSetIterator<N, I>& BitSetIterator<N, I>::operator++() {
+template <size_t N, typename I, typename C>
+constexpr BitSetIterator<N, I, C>& BitSetIterator<N, I, C>::operator++() {
   FindNextBit();
   return *this;
 }
 
-template <size_t N, typename I>
-constexpr BitSetIterator<N, I> BitSetIterator<N, I>::operator++(int) {
+template <size_t N, typename I, typename C>
+constexpr BitSetIterator<N, I, C> BitSetIterator<N, I, C>::operator++(int) {
   BitSetIterator it = *this;
   ++(*this);
   return it;
 }
 
-template <size_t N, typename I>
-BitSetIterator<N, I>::BitSetIterator()
+template <size_t N, typename I, typename C>
+template <typename U>
+constexpr typename std::enable_if_t<!U::value, void>
+BitSetIterator<N, I, C>::ClearAt() {
+  bit_set_->data_[idx_] &= ~(I(0x1) << bidx_);
+}
+
+template <size_t N, typename I, typename C>
+BitSetIterator<N, I, C>::BitSetIterator()
     : bit_set_(nullptr), idx_(BitSet<N, I>::kArraySize), bidx_(0) {}
 
-template <size_t N, typename I>
-BitSetIterator<N, I>::BitSetIterator(const BitSet<N, I>& bit_set,
-                                     size_t starting_pos)
+template <size_t N, typename I, typename C>
+BitSetIterator<N, I, C>::BitSetIterator(BitSetT& bit_set, size_t starting_pos)
     : bit_set_(&bit_set),
       idx_((starting_pos + BitSet<N, I>::kBitsPerEntry - 1) /
                BitSet<N, I>::kBitsPerEntry -
@@ -183,8 +199,8 @@ BitSetIterator<N, I>::BitSetIterator(const BitSet<N, I>& bit_set,
   FindNextBit();
 }
 
-template <size_t N, typename I>
-void BitSetIterator<N, I>::FindNextBit() {
+template <size_t N, typename I, typename C>
+void BitSetIterator<N, I, C>::FindNextBit() {
   while (cache_ == 0) {
     idx_++;
     bidx_ = 0;
@@ -330,13 +346,23 @@ constexpr size_t BitSet<N, I>::TrailingOnes(size_t from) const {
 }
 
 template <size_t N, typename I>
+constexpr BitSet<N, I>::iterator BitSet<N, I>::begin(size_t from) {
+  return BitSetIterator<N, I, std::false_type>(*this, /*starting_pos=*/from);
+}
+
+template <size_t N, typename I>
 constexpr BitSet<N, I>::const_iterator BitSet<N, I>::begin(size_t from) const {
-  return BitSetIterator<N, I>(*this, /*starting_pos=*/from);
+  return BitSetIterator<N, I, std::true_type>(*this, /*starting_pos=*/from);
+}
+
+template <size_t N, typename I>
+constexpr BitSet<N, I>::iterator BitSet<N, I>::end() {
+  return BitSetIterator<N, I, std::false_type>();
 }
 
 template <size_t N, typename I>
 constexpr BitSet<N, I>::const_iterator BitSet<N, I>::end() const {
-  return BitSetIterator<N, I>();
+  return BitSetIterator<N, I, std::true_type>();
 }
 
 /* static */
