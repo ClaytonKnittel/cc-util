@@ -10,6 +10,26 @@ cc_library(
 )
 
 cc_library(
+    name = "bit_set",
+    hdrs = ["bit_set.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@abseil-cpp//absl/numeric:bits",
+    ],
+)
+
+cc_test(
+    name = "bit_set_test",
+    srcs = ["bit_set_test.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":bit_set",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
     name = "csi",
     hdrs = ["csi.h"],
     visibility = ["//visibility:public"],
