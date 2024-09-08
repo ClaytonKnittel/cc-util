@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 namespace util {
@@ -66,6 +67,34 @@ TEST(BitSetTest, TestSingleBit) {
       EXPECT_EQ(s.TrailingOnes(from), from == pos ? pos + 1 : from);
     }
   }
+}
+
+TEST(BitSetTest, TestIterate) {
+  static constexpr size_t kSize = 403;
+  BitSet<kSize> b;
+
+  b.Set(10);
+  b.Set(11);
+  b.Set(12);
+  b.Set(13);
+  b.Set(14);
+  b.Set(15);
+  b.Set(250);
+  b.Set(255);
+
+  EXPECT_THAT(b, testing::ElementsAre(10, 11, 12, 13, 14, 15, 250, 255));
+}
+
+TEST(BitSetTest, TestIterateFull) {
+  static constexpr size_t kSize = 444;
+  BitSet<kSize> b = ~BitSet<kSize>();
+
+  std::vector<size_t> els;
+  els.reserve(kSize);
+  for (size_t i = 0; i < kSize; i++) {
+    els.push_back(i);
+  }
+  EXPECT_THAT(b, testing::ElementsAreArray(els));
 }
 
 }  // namespace util
