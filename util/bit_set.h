@@ -28,6 +28,8 @@ class BitSetIterator {
 
  public:
   using value_type = size_t;
+  using reference = const size_t&;
+  using pointer = const size_t*;
   using difference_type = size_t;
   using iterator_category = std::forward_iterator_tag;
 
@@ -35,7 +37,7 @@ class BitSetIterator {
   constexpr BitSetIterator& operator=(const BitSetIterator&) = default;
 
   // Returns the index of this set bit in the BitSet.
-  constexpr size_t operator*() const;
+  constexpr value_type operator*() const;
 
   constexpr bool operator==(const BitSetIterator&) const;
   constexpr bool operator!=(const BitSetIterator&) const;
@@ -71,6 +73,7 @@ class BitSet {
  public:
   using value_type = size_t;
   using const_reference = const size_t&;
+  using const_pointer = const size_t*;
   using const_iterator = BitSetIterator<N, I>;
 
   constexpr BitSet() = default;
@@ -119,7 +122,7 @@ class BitSet {
   // `from` is returned.
   constexpr size_t TrailingOnes(size_t from = 0) const;
 
-  constexpr const_iterator begin() const;
+  constexpr const_iterator begin(size_t from = 0) const;
   constexpr const_iterator end() const;
 
  private:
@@ -171,8 +174,12 @@ BitSetIterator<N, I>::BitSetIterator(const BitSet<N, I>& bit_set,
       idx_((starting_pos + BitSet<N, I>::kBitsPerEntry - 1) /
                BitSet<N, I>::kBitsPerEntry -
            1),
-      bidx_((starting_pos - 1) % BitSet<N, I>::kBitsPerEntry),
-      cache_(starting_pos != 0 ? bit_set.data_[idx_] : 0) {
+      cache_(
+          starting_pos != 0
+              ? bit_set.data_[idx_] &
+                    ~((I(0x1) << (starting_pos % BitSet<N, I>::kBitsPerEntry)) -
+                      1)
+              : 0) {
   FindNextBit();
 }
 
@@ -323,8 +330,8 @@ constexpr size_t BitSet<N, I>::TrailingOnes(size_t from) const {
 }
 
 template <size_t N, typename I>
-constexpr BitSet<N, I>::const_iterator BitSet<N, I>::begin() const {
-  return BitSetIterator<N, I>(*this);
+constexpr BitSet<N, I>::const_iterator BitSet<N, I>::begin(size_t from) const {
+  return BitSetIterator<N, I>(*this, /*starting_pos=*/from);
 }
 
 template <size_t N, typename I>

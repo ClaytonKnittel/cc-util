@@ -97,4 +97,16 @@ TEST(BitSetTest, TestIterateFull) {
   EXPECT_THAT(b, testing::ElementsAreArray(els));
 }
 
+TEST(BitSetTest, TestIterateFrom) {
+  static constexpr size_t kSize = 444;
+  const BitSet<kSize> b = ~BitSet<kSize>();
+
+  std::vector<size_t> els;
+  els.reserve(kSize);
+  for (size_t i = 55; i < kSize; i++) {
+    els.push_back(i);
+  }
+  EXPECT_THAT(els, testing::ElementsAreArray(b.begin(/*from=*/55), b.end()));
+}
+
 }  // namespace util
