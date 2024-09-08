@@ -190,12 +190,13 @@ BitSetIterator<N, I, C>::BitSetIterator(BitSetT& bit_set, size_t starting_pos)
       idx_((starting_pos + BitSet<N, I>::kBitsPerEntry - 1) /
                BitSet<N, I>::kBitsPerEntry -
            1),
-      cache_(
-          starting_pos != 0
-              ? bit_set.data_[idx_] &
-                    ~((I(0x1) << (starting_pos % BitSet<N, I>::kBitsPerEntry)) -
-                      1)
-              : 0) {
+      cache_(starting_pos != 0
+                 ? bit_set.data_[idx_] &
+                       ~((I(0x2)
+                          << ((starting_pos + BitSet<N, I>::kBitsPerEntry - 1) %
+                              BitSet<N, I>::kBitsPerEntry)) -
+                         1)
+                 : 0) {
   FindNextBit();
 }
 

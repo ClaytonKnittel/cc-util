@@ -109,6 +109,18 @@ TEST(BitSetTest, TestIterateFrom) {
   EXPECT_THAT(els, testing::ElementsAreArray(b.begin(/*from=*/55), b.end()));
 }
 
+TEST(BitSetTest, TestIterateFromMultiple) {
+  static constexpr size_t kSize = 88;
+  const BitSet<kSize> b = ~BitSet<kSize>();
+
+  std::vector<size_t> els;
+  els.reserve(kSize);
+  for (size_t i = 64; i < kSize; i++) {
+    els.push_back(i);
+  }
+  EXPECT_THAT(els, testing::ElementsAreArray(b.begin(/*from=*/64), b.end()));
+}
+
 TEST(BitSetTest, TestClearIterator) {
   static constexpr size_t kSize = 222;
   BitSet<kSize> b;
